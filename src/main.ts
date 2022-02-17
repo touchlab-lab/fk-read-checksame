@@ -1,16 +1,28 @@
 import * as core from '@actions/core'
-import {wait} from './wait'
+// import * as github from '@actions/github'
+import {existsSync, promises as fsp} from 'fs'
+
+interface Checkdiff {
+  checksum: string
+}
 
 async function run(): Promise<void> {
   try {
-    const ms: string = core.getInput('milliseconds')
-    core.debug(`Waiting ${ms} milliseconds ...`) // debug is only output if you set the secret `ACTIONS_STEP_DEBUG` to true
+    const modulePath: string = core.getInput('faktory_module')
+    core.debug(`Reading from ${modulePath}`)
 
-    core.debug(new Date().toTimeString())
-    await wait(parseInt(ms, 10))
-    core.debug(new Date().toTimeString())
+    const checkdiffPath = `${modulePath}/.faktory/checkdiff`
+    if (existsSync(checkdiffPath)) {
+      const fileData = await fsp.readFile(
+        `${modulePath}/.faktory/checkdiff`,
+        'utf8'
+      )
 
-    core.setOutput('time', new Date().toTimeString())
+      const fkdata: Checkdiff = JSON.parse(fileData)
+      core.setOutput('checksum', fkdata.checksum)
+    } else {
+      core.setOutput('checksum', '')
+    }
   } catch (error) {
     if (error instanceof Error) core.setFailed(error.message)
   }

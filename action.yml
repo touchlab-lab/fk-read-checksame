@@ -1,11 +1,10 @@
-name: 'Your name here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'FK Read Checksame'
+description: 'Nah'
+author: 'Touchlab'
 inputs:
-  milliseconds: # change this
+  faktory_module:
     required: true
-    description: 'input description here'
-    default: 'default value if applicable'
+    description: 'module path'
 runs:
   using: 'node12'
   main: 'dist/index.js'
