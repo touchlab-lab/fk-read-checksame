@@ -1,3 +1,5 @@
+Don't run this directly. Something is wrong with the bash script params
+
 npm run packall
 git add .
 git commit -m "$2"
