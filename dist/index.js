@@ -41,27 +41,53 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(186));
 // import * as github from '@actions/github'
+const path = __importStar(__nccwpck_require__(17));
 const fs_1 = __nccwpck_require__(147);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const modulePath = core.getInput('faktory_module');
-            core.debug(`Reading from ${modulePath}`);
-            const checkdiffPath = `${modulePath}/.faktory/checkdiff`;
-            if ((0, fs_1.existsSync)(checkdiffPath)) {
-                const fileData = yield fs_1.promises.readFile(`${modulePath}/.faktory/checkdiff`, 'utf8');
-                const fkdata = JSON.parse(fileData);
-                core.setOutput('checksum', fkdata.checksum);
-            }
-            else {
-                core.setOutput('checksum', '');
-            }
+            const allDiffs = yield walkDir('.');
+            const bigDiff = allDiffs
+                .sort((a, b) => a.basePath < b.basePath ? -1 : b.basePath < a.basePath ? 1 : 0)
+                .map(value => value.checkdiff)
+                .join('|');
+            core.debug(`bigDiff ${bigDiff}`);
+            core.setOutput('checksum', bigDiff);
         }
         catch (error) {
             if (error instanceof Error)
                 core.setFailed(error.message);
         }
     });
+}
+function walkDir(basePath) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const files = yield fs_1.promises.readdir(basePath, { withFileTypes: true });
+        const allDiffs = [];
+        for (const file of files) {
+            if (file.isDirectory()) {
+                if (file.name === '.faktory') {
+                    const checkdiffPath = `${path.join(basePath, file.name, 'checkdiff')}`;
+                    if ((0, fs_1.existsSync)(checkdiffPath)) {
+                        const fileData = yield fs_1.promises.readFile(checkdiffPath, 'utf8');
+                        const fkdata = JSON.parse(fileData);
+                        return [new CheckdiffInfo(basePath, fkdata.checksum)];
+                    }
+                }
+                else {
+                    const otherDiffs = yield walkDir(path.join(basePath, file.name));
+                    allDiffs.push(...otherDiffs);
+                }
+            }
+        }
+        return allDiffs;
+    });
+}
+class CheckdiffInfo {
+    constructor(basePath, checkdiff) {
+        this.basePath = basePath;
+        this.checkdiff = checkdiff;
+    }
 }
 run();
 
