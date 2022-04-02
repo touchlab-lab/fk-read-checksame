@@ -1,10 +1,6 @@
 name: 'FK Read Checksame'
 description: 'Nah'
 author: 'Touchlab'
-inputs:
-  faktory_module:
-    required: true
-    description: 'module path'
 runs:
   using: 'node12'
   main: 'dist/index.js'
